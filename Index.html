@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#102744">
+  <title>School Curriculum Hub | โรงเรียนบ้านบึงกาฬ</title>
+  <?!= include('Styles'); ?>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="กลับหน้าหลัก">
+        <div class="brand-mark"><span>BBK</span><i>✦</i></div>
+        <div class="brand-copy">
+          <div class="brand-kicker">BAN BUENG KAN SCHOOL</div>
+          <div class="brand-title" id="schoolName">SCHOOL CURRICULUM HUB</div>
+          <div class="brand-sub" id="schoolSubtitle">คลังหลักสูตรสถานศึกษาออนไลน์</div>
+        </div>
+      </a>
+      <div class="top-actions">
+        <span class="live-pill"><i></i> ระบบเผยแพร่ข้อมูล</span>
+        <button class="btn btn-ghost" id="adminOpen"><span class="gear">⚙</span><span>ผู้ดูแลระบบ</span></button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-grid"></div>
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="eyebrow-line"></span> SMART SCHOOL <b>•</b> DIGITAL CURRICULUM</div>
+          <h1>คลังหลักสูตร<br><em>สถานศึกษาออนไลน์</em></h1>
+          <p class="hero-description">ศูนย์กลางข้อมูลหลักสูตรสถานศึกษา ตัวชี้วัด เอกสารประกอบการเรียนรู้<br class="desktop-break"> และการวัดประเมินผล ค้นหาและเข้าถึงข้อมูลได้ในที่เดียว</p>
+          <div class="searchbar">
+            <span class="search-symbol">⌕</span>
+            <input id="globalSearch" aria-label="ค้นหาข้อมูล" placeholder="ค้นหารายวิชา ตัวชี้วัด เอกสาร หรือข้อสอบ..." />
+            <button id="searchBtn"><span>ค้นหา</span><b>→</b></button>
+          </div>
+          <div class="hero-meta">
+            <span><i>✓</i> เข้าถึงข้อมูลสาธารณะได้</span>
+            <span><i>✓</i> รองรับทุกอุปกรณ์</span>
+            <span><i>✓</i> คัดลอกข้อมูลไปใช้งานได้</span>
+          </div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="art-glow"></div>
+          <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+          <div class="book-illustration">
+            <div class="book-cover"><span>BBK</span><i>✦</i><small>CURRICULUM<br>2026</small></div>
+            <div class="book-page"></div><div class="book-page second"></div><div class="book-spine"></div>
+          </div>
+          <div class="floating-card card-a"><b>01</b><span>หลักสูตร</span></div>
+          <div class="floating-card card-b"><b>02</b><span>ตัวชี้วัด</span></div>
+          <div class="floating-card card-c"><b>03</b><span>การประเมิน</span></div>
+          <div class="art-caption">LEARN • PLAN • GROW</div>
+        </div>
+        <div class="hero-bottomline"><span>คลังข้อมูลเพื่อการจัดการเรียนรู้</span><span>โรงเรียนบ้านบึงกาฬ <b>—</b> จังหวัดบึงกาฬ</span></div>
+      </section>
+
+      <div class="main-wrap">
+        <section class="overview-strip" aria-label="ภาพรวมข้อมูล">
+          <div class="overview-intro">
+            <span class="eyebrow dark">AT A GLANCE</span>
+            <h2>ข้อมูลหลักสูตรในระบบ</h2>
+            <p>ภาพรวมรายการข้อมูลที่เปิดให้เข้าถึง</p>
+          </div>
+          <div class="overview-stat">
+            <span class="stat-icon stat-blue">▤</span>
+            <div><strong id="statSubjects">—</strong><small>รายวิชา</small></div>
+          </div>
+          <div class="overview-stat">
+            <span class="stat-icon stat-teal">⌗</span>
+            <div><strong id="statIndicators">—</strong><small>ตัวชี้วัด</small></div>
+          </div>
+          <div class="overview-stat">
+            <span class="stat-icon stat-gold">▣</span>
+            <div><strong id="statDocuments">—</strong><small>เอกสารหลักสูตร</small></div>
+          </div>
+          <div class="overview-stat">
+            <span class="stat-icon stat-violet">▧</span>
+            <div><strong id="statQuestions">—</strong><small>ชุดข้อสอบ</small></div>
+          </div>
+        </section>
+
+        <section class="directory-section">
+          <div class="section-heading">
+            <div><div class="eyebrow dark">CURRICULUM DIRECTORY</div><h2>เลือกหมวดหมู่ที่ต้องการ</h2><p>เข้าถึงข้อมูลหลักสูตรของโรงเรียนได้อย่างสะดวกและเป็นระบบ</p></div>
+            <div class="result-count-wrap"><span class="count-dot"></span><span id="resultCount">กำลังโหลดข้อมูล...</span></div>
+          </div>
+          <section class="module-grid" id="moduleGrid">
+            <button class="module-card navy" data-section="Subjects"><span class="module-top"><span class="module-icon">▤</span><span class="module-no">01 / CURRICULUM</span></span><strong>โครงสร้างรายวิชา</strong><small>คำอธิบายรายวิชาและตัวชี้วัด</small><span class="card-arrow">↗</span></button>
+            <button class="module-card blue" data-section="CurriculumDocuments"><span class="module-top"><span class="module-icon">▣</span><span class="module-no">02 / DOCUMENTS</span></span><strong>เอกสารประกอบหลักสูตร</strong><small>คลังเอกสารแยกตามกลุ่มสาระ</small><span class="card-arrow">↗</span></button>
+            <button class="module-card teal" data-section="StudentActivities"><span class="module-top"><span class="module-icon">✳</span><span class="module-no">03 / ACTIVITIES</span></span><strong>กิจกรรมพัฒนาผู้เรียน</strong><small>ชุมนุม แนะแนว และลูกเสือ</small><span class="card-arrow">↗</span></button>
+            <button class="module-card gold" data-section="AssessmentCriteria"><span class="module-top"><span class="module-icon">◉</span><span class="module-no">04 / ASSESSMENT</span></span><strong>การวัดและประเมินผล</strong><small>เกณฑ์คะแนนและการตัดสินผล</small><span class="card-arrow">↗</span></button>
+            <button class="module-card violet" data-section="QuestionBank"><span class="module-top"><span class="module-icon">▧</span><span class="module-no">05 / QUESTION BANK</span></span><strong>คลังข้อสอบ</strong><small>แบบทดสอบและเอกสารข้อสอบ</small><span class="card-arrow">↗</span></button>
+            <button class="module-card slate" data-section="all"><span class="module-top"><span class="module-icon">⌕</span><span class="module-no">06 / DISCOVER</span></span><strong>ค้นหาทั้งระบบ</strong><small>ค้นหาข้อมูลจากทุกหมวดหมู่</small><span class="card-arrow">↗</span></button>
+          </section>
+        </section>
+
+        <section class="content-panel" id="contentPanel">
+          <div class="panel-head"><div><div class="eyebrow dark">BROWSE CONTENT</div><h2 id="panelTitle">ข้อมูลหลักสูตรล่าสุด</h2><p class="panel-subtitle">เลือกดูรายละเอียดและเปิดเอกสารที่เกี่ยวข้อง</p></div><button class="btn btn-light" id="backHome" hidden>← กลับหน้าหลัก</button></div>
+          <div class="filter-row" id="filterRow">
+            <select id="gradeFilter" aria-label="เลือกระดับชั้น"><option value="">ทุกระดับชั้น</option><option>ป.1</option><option>ป.2</option><option>ป.3</option><option>ป.4</option><option>ป.5</option><option>ป.6</option></select>
+            <select id="areaFilter" aria-label="เลือกกลุ่มสาระ"><option value="">ทุกกลุ่มสาระ</option></select>
+            <label class="local-search"><span>⌕</span><input id="localSearch" placeholder="ค้นหาในหมวดนี้..." /></label>
+          </div>
+          <div id="contentList" class="content-list"><div class="loading">กำลังโหลดข้อมูลหลักสูตร...</div></div>
+        </section>
+
+        <section class="quick-note">
+          <div class="note-icon">✦</div>
+          <div><b>ใช้ข้อมูลหลักสูตรอย่างมั่นใจ</b><p>ข้อมูลที่เผยแพร่เป็นข้อมูลกลางของสถานศึกษา โปรดตรวจสอบปีการศึกษาและฉบับที่มีผลบังคับใช้ก่อนนำไปใช้อ้างอิงในเอกสารทางราชการ</p></div>
+          <span class="note-watermark">BBK</span>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <div class="footer-inner">
+        <div class="footer-brand">SCHOOL CURRICULUM HUB</div>
+        <div id="footerSchool">โรงเรียนบ้านบึงกาฬ</div>
+        <small>Digital Learning Resource <span class="footer-separator">•</span> <span id="version"></span></small>
+      </div>
+    </footer>
+  </div>
+
+  <div class="modal-backdrop" id="detailModal"><div class="modal detail-modal"><button class="modal-close" data-close="detailModal">×</button><div id="detailContent"></div></div></div>
+  <div class="modal-backdrop" id="adminModal"><div class="modal admin-modal"><button class="modal-close" data-close="adminModal">×</button><div id="adminContent"></div></div></div>
+  <?!= include('JavaScript'); ?>
+</body>
+</html>

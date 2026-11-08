@@ -1,0 +1,161 @@
+<script>
+const state = {data:null, section:'all', token:null, adminData:null, adminSection:'Subjects', editing:null};
+const LABELS = {
+  Subjects:'โครงสร้างรายวิชา', Indicators:'ตัวชี้วัดรายวิชาพื้นฐาน', LearningOutcomes:'ผลการเรียนรู้รายวิชาเพิ่มเติม', CurriculumDocuments:'เอกสารประกอบหลักสูตร',
+  StudentActivities:'กิจกรรมพัฒนาผู้เรียน', AssessmentCriteria:'การวัดและประเมินผล',
+  QuestionBank:'คลังข้อสอบ', all:'ค้นหาทั้งระบบ'
+};
+const FIELDS = {
+ Subjects:[['grade','ระดับชั้น','select',['ป.1','ป.2','ป.3','ป.4','ป.5','ป.6']],['learningArea','กลุ่มสาระ','text'],['subjectCode','รหัสวิชา','text'],['subjectName','ชื่อรายวิชา','text'],['subjectType','ประเภทรายวิชา','select',['พื้นฐาน','เพิ่มเติม']],['hours','เวลาเรียน (ชั่วโมง)','number'],['credits','หน่วยกิต','text'],['academicYear','ปีการศึกษา','text'],['description','คำอธิบายรายวิชา','textarea'],['status','สถานะ','select',['active','draft','inactive']],['sortOrder','ลำดับแสดงผล','number']],
+ Indicators:[['subjectId','รหัสรายการวิชา (Subject ID)','text'],['grade','ระดับชั้น','text'],['learningArea','กลุ่มสาระ','text'],['subjectCode','รหัสวิชา','text'],['subjectName','ชื่อรายวิชา','text'],['indicatorType','ประเภทตัวชี้วัด','select',['ระหว่างทาง','ปลายทาง']],['indicatorCode','รหัสตัวชี้วัด','text'],['indicatorText','รายละเอียดตัวชี้วัด','textarea'],['sortOrder','ลำดับ','number']],
+ CurriculumDocuments:[['learningArea','กลุ่มสาระ','text'],['subjectId','รหัสรายการวิชา (Subject ID)','text'],['grade','ระดับชั้น','text'],['title','ชื่อเอกสาร','text'],['documentType','ประเภทเอกสาร','text'],['description','รายละเอียด','textarea'],['fileUrl','ลิงก์ไฟล์ Google Drive/PDF','url'],['visibility','การเผยแพร่','select',['public','private']],['status','สถานะ','select',['active','draft','inactive']],['sortOrder','ลำดับ','number']],
+ StudentActivities:[['category','หมวดกิจกรรม','select',['ชุมนุม','ลูกเสือ','แนะแนว']],['subcategory','ประเภท/ระดับ','text'],['title','ชื่อกิจกรรม','text'],['grade','ระดับชั้น','text'],['objectives','วัตถุประสงค์','textarea'],['details','รายละเอียดกิจกรรม','textarea'],['assessment','การวัดและประเมินผล','textarea'],['fileUrl','ลิงก์เอกสาร','url'],['status','สถานะ','select',['active','draft','inactive']],['sortOrder','ลำดับ','number']],
+ AssessmentCriteria:[['grade','ระดับชั้น','text'],['subjectId','รหัสรายการวิชา (Subject ID)','text'],['subjectName','ชื่อรายวิชา','text'],['assessmentType','ประเภทการประเมิน','text'],['scoreStructure','สัดส่วนคะแนน','textarea'],['gradingCriteria','เกณฑ์ตัดสินผล','textarea'],['description','รายละเอียดเพิ่มเติม','textarea'],['status','สถานะ','select',['active','draft','inactive']]],
+ LearningOutcomes:[['subjectId','รหัสรายการวิชา (Subject ID)','text'],['grade','ระดับชั้น','text'],['learningArea','กลุ่มสาระ','text'],['subjectCode','รหัสวิชา','text'],['subjectName','ชื่อรายวิชา','text'],['outcomeCode','ลำดับผลการเรียนรู้','text'],['learningOutcomeText','ข้อความผลการเรียนรู้','textarea'],['academicYear','ปีการศึกษา','text'],['sortOrder','ลำดับแสดงผล','number'],['status','สถานะ','select',['active','draft','inactive']]],
+ QuestionBank:[['grade','ระดับชั้น','text'],['learningArea','กลุ่มสาระ','text'],['subjectId','รหัสรายการวิชา (Subject ID)','text'],['subjectName','ชื่อรายวิชา','text'],['academicYear','ปีการศึกษา','text'],['year','ปีของข้อสอบ (ถ้ามี)','text'],['questionType','ประเภทข้อสอบ','text'],['title','ชื่อชุดข้อสอบ','text'],['description','รายละเอียด','textarea'],['fileUrl','ลิงก์ไฟล์ข้อสอบ','url'],['answerFileUrl','ลิงก์เฉลย (จำกัดสิทธิ์)','url'],['visibility','การเผยแพร่','select',['public','private']],['status','สถานะ','select',['active','draft','inactive']]]
+};
+const $ = id => document.getElementById(id);
+function gas(name,...args){return new Promise((resolve,reject)=>google.script.run.withSuccessHandler(resolve).withFailureHandler(e=>reject(new Error(e.message||e)))[name](...args));}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600);}
+function showModal(id){$(id).classList.add('show')}function closeModal(id){$(id).classList.remove('show')}
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
+document.querySelectorAll('.module-card').forEach(b=>b.addEventListener('click',()=>openSection(b.dataset.section)));
+$('backHome').onclick=()=>openSection('all');
+$('searchBtn').onclick=()=>{openSection('all');renderList($('globalSearch').value)};
+$('globalSearch').addEventListener('keydown',e=>{if(e.key==='Enter')$('searchBtn').click()});
+$('localSearch').addEventListener('input',()=>renderList());
+$('gradeFilter').onchange=()=>renderList();$('areaFilter').onchange=()=>renderList();
+$('adminOpen').onclick=openAdmin;
+
+async function init(){
+ try{
+  state.data=await gas('getPublicData');
+  const s=state.data.settings||{};
+  $('schoolName').textContent=s.schoolName||'SCHOOL CURRICULUM HUB';
+  $('schoolSubtitle').textContent=s.schoolSubtitle||'คลังหลักสูตรสถานศึกษาออนไลน์';
+  $('footerSchool').textContent=s.schoolName||'คลังหลักสูตรสถานศึกษาออนไลน์';
+  $('version').textContent='Version '+(state.data.version||'1.0');
+  const count=Object.values(state.data).filter(Array.isArray).reduce((n,a)=>n+a.length,0);
+  $('resultCount').textContent=count.toLocaleString('th-TH')+' รายการข้อมูล';
+  const setStat=(id,value)=>{const el=$(id);if(el)el.textContent=Number(value||0).toLocaleString('th-TH');};
+  setStat('statSubjects',(state.data.Subjects||[]).length);
+  setStat('statIndicators',(state.data.Indicators||[]).length);
+  setStat('statDocuments',(state.data.CurriculumDocuments||[]).length);
+  setStat('statQuestions',(state.data.QuestionBank||[]).length);
+  fillAreaFilter();renderList();
+ }catch(e){$('contentList').innerHTML='<div class="empty">ไม่สามารถโหลดข้อมูลได้: '+esc(e.message)+'</div>';}
+}
+function fillAreaFilter(){
+ const areas=[...new Set((state.data.Subjects||[]).map(x=>x.learningArea).filter(Boolean))].sort();
+ $('areaFilter').innerHTML='<option value="">ทุกกลุ่มสาระ</option>'+areas.map(x=>'<option>'+esc(x)+'</option>').join('');
+}
+function openSection(section){
+ state.section=section;$('panelTitle').textContent=LABELS[section]||'ข้อมูลหลักสูตร';
+ $('backHome').hidden=false;$('filterRow').classList.toggle('hidden',section==='StudentActivities');
+ $('localSearch').value='';$('gradeFilter').value='';$('areaFilter').value='';
+ renderList();
+ document.querySelector('.content-panel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function sectionRows(){
+ const d=state.data||{};
+ if(state.section==='all')return [...(d.Subjects||[]).map(x=>({...x,_table:'Subjects',_title:x.subjectName,_sub:(x.subjectCode||'')+' • '+(x.grade||''),_searchText:[...(d.LearningOutcomes||[]).filter(o=>o.subjectId===x.id).map(o=>o.learningOutcomeText),...(d.Indicators||[]).filter(o=>o.subjectId===x.id).map(o=>o.indicatorText)].join(' ')})),
+ ...(d.CurriculumDocuments||[]).map(x=>({...x,_table:'CurriculumDocuments',_title:x.title,_sub:x.learningArea||''})),
+ ...(d.StudentActivities||[]).map(x=>({...x,_table:'StudentActivities',_title:x.title,_sub:x.category+' • '+(x.subcategory||'')})),
+ ...(d.AssessmentCriteria||[]).map(x=>({...x,_table:'AssessmentCriteria',_title:x.subjectName||x.assessmentType,_sub:x.grade||''})),
+ ...(d.QuestionBank||[]).map(x=>({...x,_table:'QuestionBank',_title:x.title,_sub:x.grade+' • '+(x.subjectName||'')}))];
+ return (d[state.section]||[]).map(x=>({...x,_table:state.section,_title:x.subjectName||x.title||x.category,_sub:x.grade||x.learningArea||x.category||x.documentType||'',_searchText:state.section==='Subjects'?[...(d.LearningOutcomes||[]).filter(o=>o.subjectId===x.id).map(o=>o.learningOutcomeText),...(d.Indicators||[]).filter(o=>o.subjectId===x.id).map(o=>o.indicatorText)].join(' '):''}));
+}
+function renderList(searchOverride){
+ if(!state.data)return;
+ const query=(searchOverride!==undefined?searchOverride:$('localSearch').value).toLowerCase().trim();
+ const grade=$('gradeFilter').value,area=$('areaFilter').value;
+ const rows=sectionRows().filter(x=>{
+  const hay=Object.values(x).join(' ').toLowerCase();
+  return (!query||hay.includes(query))&&(!grade||x.grade===grade)&&(!area||x.learningArea===area);
+ }).sort((a,b)=>(Number(a.sortOrder)||999)-(Number(b.sortOrder)||999));
+ $('contentList').innerHTML=rows.length?rows.map((x,i)=>`<article class="content-item" data-table="${esc(x._table)}" data-id="${esc(x.id)}"><div><h3>${esc(x._title||'ไม่มีชื่อรายการ')}</h3><p>${esc(x._sub||'')} ${x.subjectCode?' • '+esc(x.subjectCode):''} ${x.hours?' • '+esc(x.hours)+' ชั่วโมง':''}</p></div><span class="item-tag">${esc(LABELS[x._table]||x._table)}</span><span class="item-open">›</span></article>`).join(''):'<div class="empty">ยังไม่มีข้อมูลในหมวดหมู่นี้ หรือไม่พบรายการที่ค้นหา</div>';
+ $('contentList').querySelectorAll('.content-item').forEach(el=>el.onclick=()=>showDetail(el.dataset.table,el.dataset.id));
+}
+function showDetail(table,id){
+ const row=(state.data[table]||[]).find(x=>String(x.id)===String(id));if(!row)return;
+ let html=`<div class="eyebrow dark">${esc(LABELS[table]||table)}</div><h2 class="detail-title">${esc(row.subjectName||row.title||row.category||'รายละเอียด')}</h2><div class="detail-meta">${esc(row.grade||'')} ${row.subjectCode?' • '+esc(row.subjectCode):''} ${row.learningArea?' • '+esc(row.learningArea):''}</div>`;
+ if(table==='Subjects'){
+  html+=section('ข้อมูลรายวิชา',`รหัสวิชา: ${row.subjectCode||'-'}\nประเภท: ${row.subjectType||'-'}\nเวลาเรียน: ${row.hours||'-'} ชั่วโมง/ปี\nหน่วยกิต: ${row.credits||'-'}\nปีการศึกษา: ${row.academicYear||'-'}`);
+  html+=section('คำอธิบายรายวิชา',row.description||'ยังไม่มีคำอธิบายรายวิชา')+copyButton('คัดลอกคำอธิบายรายวิชา',row.description||'');
+  if(String(row.subjectType||'').includes('เพิ่ม')){
+   const outcomes=(state.data.LearningOutcomes||[]).filter(x=>String(x.subjectId)===String(row.id)||(x.subjectCode&&x.subjectCode===row.subjectCode&&x.grade===row.grade)).sort((a,b)=>(Number(a.sortOrder)||999)-(Number(b.sortOrder)||999));
+   html+=`<div class="detail-section"><h4>ผลการเรียนรู้</h4>${outcomes.length?`<ol>${outcomes.map(x=>`<li>${esc(x.learningOutcomeText)}</li>`).join('')}</ol>${copyButton('คัดลอกผลการเรียนรู้ทั้งหมด',outcomes.map(x=>`${x.outcomeCode||''}. ${x.learningOutcomeText}`).join('\n'))}`:'<p>ยังไม่มีข้อมูลผลการเรียนรู้</p>'}</div>`;
+  }else{
+   const inds=(state.data.Indicators||[]).filter(x=>String(x.subjectId)===String(row.id)||(x.subjectCode&&x.subjectCode===row.subjectCode&&x.grade===row.grade));
+   ['ระหว่างทาง','ปลายทาง'].forEach(type=>{
+    const list=inds.filter(x=>x.indicatorType===type);
+    html+=`<div class="detail-section"><h4>ตัวชี้วัด${type}</h4>${list.length?`<table class="data-table"><tr><th>รหัส</th><th>รายละเอียด</th></tr>${list.map(x=>`<tr><td>${esc(x.indicatorCode)}</td><td>${esc(x.indicatorText)}</td></tr>`).join('')}</table>${copyButton('คัดลอกตัวชี้วัด'+type,list.map(x=>(x.indicatorCode?x.indicatorCode+' ':'')+x.indicatorText).join('\n'))}`:'<p>ยังไม่มีข้อมูลตัวชี้วัด</p>'}</div>`;
+   });
+  }
+ }else if(table==='CurriculumDocuments'){
+  html+=section('รายละเอียดเอกสาร',row.description||'-')+section('ประเภทเอกสาร',row.documentType||'-')+linkButton(row.fileUrl,'เปิดเอกสาร');
+ }else if(table==='StudentActivities'){
+  html+=section('วัตถุประสงค์',row.objectives||'-')+section('รายละเอียดกิจกรรม',row.details||'-')+section('การวัดและประเมินผล',row.assessment||'-')+linkButton(row.fileUrl,'เปิดเอกสาร');
+ }else if(table==='AssessmentCriteria'){
+  html+=section('สัดส่วนคะแนน',row.scoreStructure||'-')+section('เกณฑ์ตัดสินผล',row.gradingCriteria||'-')+section('รายละเอียดเพิ่มเติม',row.description||'-');
+ }else if(table==='QuestionBank'){
+  html+=section('รายละเอียดข้อสอบ',row.description||'-')+linkButton(row.fileUrl,'เปิดข้อสอบ');
+  if(row.answerFileUrl)html+=`<p class="muted">มีไฟล์เฉลยสำหรับผู้มีสิทธิ์เข้าถึง กรุณาติดต่อผู้ดูแลระบบ</p>`;
+ }
+ $('detailContent').innerHTML=html;
+ $('detailContent').querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>copyText(JSON.parse(b.dataset.copy))));
+ showModal('detailModal');
+}
+function section(title,text){return `<div class="detail-section"><h4>${esc(title)}</h4><p>${esc(text)}</p></div>`}
+function copyButton(label,text){return `<button class="copy-btn" data-copy="${esc(JSON.stringify(String(text||'')))}">▣ ${esc(label)}</button>`}
+function linkButton(url,label){return url?`<div class="detail-section"><a class="copy-btn" href="${esc(url)}" target="_blank" rel="noopener">${esc(label)} ↗</a></div>`:''}
+function copyText(text){navigator.clipboard.writeText(text).then(()=>toast('คัดลอกข้อมูลแล้ว')).catch(()=>toast('ไม่สามารถคัดลอกได้ กรุณาอนุญาตการใช้งาน Clipboard'));}
+
+async function openAdmin(){
+ showModal('adminModal');
+ if(state.token){renderAdmin();return;}
+ $('adminContent').innerHTML=`<div class="login-box"><div class="login-lock">⌑</div><h2>เข้าสู่ระบบผู้ดูแล</h2><p class="muted">กรุณากรอกรหัสผ่านสำหรับจัดการข้อมูลหลักสูตร</p><input id="adminPassword" type="password" placeholder="รหัสผ่านผู้ดูแลระบบ"><button class="btn primary-btn" id="loginBtn" style="width:100%">เข้าสู่ระบบ</button><p class="muted">สำหรับผู้ดูแลระบบที่ได้รับอนุญาตเท่านั้น</p><div id="loginError" class="muted"></div></div>`;
+ $('loginBtn').onclick=async()=>{try{const r=await gas('loginAdmin',$('adminPassword').value);state.token=r.token;state.adminData=await gas('getAdminData',state.token);renderAdmin();}catch(e){$('loginError').textContent=e.message;}};
+ $('adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginBtn').click()});
+}
+function renderAdmin(){
+ const tabs=Object.keys(FIELDS);
+ $('adminContent').innerHTML=`<div class="eyebrow dark">ADMINISTRATION</div><h2>จัดการคลังหลักสูตร</h2><p class="muted">เพิ่ม แก้ไข และดูแลข้อมูลส่วนกลางของสถานศึกษา</p><div class="admin-tabs">${tabs.map(t=>`<button data-admin-tab="${t}" class="${t===state.adminSection?'active':''}">${LABELS[t]||t}</button>`).join('')}<button data-admin-tab="Settings" class="${state.adminSection==='Settings'?'active':''}">ตั้งค่าระบบ</button></div><div id="adminWorkspace"></div><div class="admin-actions"><button class="btn btn-light" id="logoutBtn">ออกจากระบบ</button></div>`;
+ $('adminContent').querySelectorAll('[data-admin-tab]').forEach(b=>b.onclick=()=>{state.adminSection=b.dataset.adminTab;renderAdmin()});
+ $('logoutBtn').onclick=async()=>{await gas('logoutAdmin',state.token);state.token=null;state.adminData=null;openAdmin();};
+ if(state.adminSection==='Settings'){renderSettings();return;}
+ const rows=state.adminData[state.adminSection]||[];
+ $('adminWorkspace').innerHTML=`<div class="admin-toolbar"><span class="muted">${rows.length} รายการ</span><button class="btn primary-btn" id="addRecord">＋ เพิ่มรายการ</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>รายการ</th><th>ระดับชั้น/หมวด</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.subjectName||r.title||r.indicatorText||r.learningOutcomeText||r.key||'-')}</td><td>${esc(r.grade||r.learningArea||r.category||r.indicatorType||'-')}</td><td>${esc(r.status||'-')}</td><td><button class="copy-btn" data-edit="${esc(r.id)}">แก้ไข</button><button class="copy-btn" data-delete="${esc(r.id)}">ลบ</button></td></tr>`).join('')||'<tr><td colspan="4">ยังไม่มีข้อมูล</td></tr>'}</tbody></table></div>`;
+ $('addRecord').onclick=()=>editRecord(null);
+ $('adminWorkspace').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editRecord(rows.find(r=>r.id===b.dataset.edit)));
+ $('adminWorkspace').querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>removeRecord(b.dataset.delete));
+}
+function editRecord(record){
+ const fields=FIELDS[state.adminSection];state.editing=record||{};
+ $('adminWorkspace').innerHTML=`<h3 style="font:500 16px Kanit;color:#284969">${record?'แก้ไขรายการ':'เพิ่มรายการใหม่'}</h3><form class="admin-form" id="recordForm">${fields.map(([key,label,type,opts])=>`<label class="${type==='textarea'?'wide':''}">${esc(label)}${type==='textarea'?`<textarea name="${key}">${esc(record?.[key]||'')}</textarea>`:type==='select'?`<select name="${key}">${opts.map(o=>`<option ${String(record?.[key]|| (key==='status'?'active':opts[0]))===o?'selected':''}>${esc(o)}</option>`).join('')}</select>`:`<input name="${key}" type="${type||'text'}" value="${esc(record?.[key]||'')}">`}</label>`).join('')}</form><div class="admin-actions"><button class="btn btn-light" id="cancelEdit">ยกเลิก</button><button class="btn primary-btn" id="saveEdit">บันทึกข้อมูล</button></div>`;
+ $('cancelEdit').onclick=()=>renderAdmin();
+ $('saveEdit').onclick=async()=>{
+  const form=$('recordForm'),obj={...(record||{})};
+  fields.forEach(([key])=>{const el=form.elements[key];obj[key]=el?el.value:'';});
+  if(state.adminSection==='Subjects'&&!obj.subjectName){toast('กรุณากรอกชื่อรายวิชา');return;}
+  try{await gas('saveRecord',state.token,state.adminSection,obj);state.adminData=await gas('getAdminData',state.token);state.data=await gas('getPublicData');toast('บันทึกข้อมูลเรียบร้อย');renderAdmin();renderList();}catch(e){toast(e.message);}
+ };
+}
+async function removeRecord(id){
+ if(!confirm('ยืนยันการลบรายการนี้หรือไม่?'))return;
+ try{await gas('deleteRecord',state.token,state.adminSection,id);state.adminData=await gas('getAdminData',state.token);state.data=await gas('getPublicData');toast('ลบข้อมูลแล้ว');renderAdmin();renderList();}catch(e){toast(e.message);}
+}
+function renderSettings(){
+ const s=state.adminData.settings||{};
+ $('adminWorkspace').innerHTML=`<h3 style="font:500 16px Kanit;color:#284969">ตั้งค่าข้อมูลสถานศึกษา</h3><form class="admin-form" id="settingsForm">
+ <label>ชื่อสถานศึกษา<input name="schoolName" value="${esc(s.schoolName||'')}"></label>
+ <label>ข้อความรอง<input name="schoolSubtitle" value="${esc(s.schoolSubtitle||'')}"></label>
+ <label>ปีการศึกษา<input name="academicYear" value="${esc(s.academicYear||'')}"></label>
+ <label>อีเมลติดต่อ<input name="publicEmail" value="${esc(s.publicEmail||'')}"></label>
+ <label>สีหลัก<input name="primaryColor" value="${esc(s.primaryColor||'#17365D')}"></label>
+ <label>สีเน้น<input name="accentColor" value="${esc(s.accentColor||'#D5A63C')}"></label></form><div class="admin-actions"><button class="btn primary-btn" id="saveSettings">บันทึกการตั้งค่า</button></div>`;
+ $('saveSettings').onclick=async()=>{const f=$('settingsForm');for(const key of ['schoolName','schoolSubtitle','academicYear','publicEmail','primaryColor','accentColor'])await gas('saveSetting',state.token,key,f.elements[key].value);state.data=await gas('getPublicData');toast('บันทึกการตั้งค่าแล้ว');init();};
+}
+init();
+</script>
